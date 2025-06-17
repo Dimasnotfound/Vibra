@@ -8,25 +8,29 @@
         <span class="font-bold text-xl tracking-tight">Vibra</span>
     </div>
     <div class="flex space-x-8 text-sm font-medium">
-        <a href="#" class="hover:text-yellow-400 transition">About</a>
-        <a href="#" class="hover:text-yellow-400 transition">How It Works</a>
-        <a href="#" class="hover:text-yellow-400 transition">Contact</a>
+        <a href="#" class="hover:text-yellow-400 transition">Tentang</a>
+        <a href="#" class="hover:text-yellow-400 transition">Cara Kerja</a>
+        <a href="#" class="hover:text-yellow-400 transition">Kontak</a>
     </div>
 </nav>
 <div class="flex flex-col md:flex-row items-center justify-center mt-12 max-w-6xl mx-auto px-4">
-    <!-- Illustration -->
+    <!-- Ilustrasi -->
     <div class="flex-shrink-0 mb-8 md:mb-0 md:mr-16">
-        <img src="{{ url_for('static', filename='vibra-illustration.png') }}" alt="Girl listening music" class="w-96 h-96 rounded-xl object-contain">
+        <img src="{{ url_for('static', filename='vibra-illustration.png') }}" alt="Ilustrasi mendengarkan musik" class="w-96 h-96 rounded-xl object-contain">
     </div>
-    <!-- Headline and content -->
+    <!-- Judul dan Konten -->
     <div class="max-w-xl">
-        <h1 class="text-4xl md:text-5xl font-extrabold leading-tight mb-4">Discover Music That Matches Your Mood<br>
-        <span class="text-yellow-400">Let the Right Music Match Your Mood</span></h1>
-        <p class="mb-6 text-lg text-gray-200">Get personalized music recommendations based on how you feel. Music that vibes with your mood.</p>
+        <h1 class="text-4xl md:text-5xl font-extrabold leading-tight mb-4">
+            Temukan Musik Sesuai Mood Kamu<br>
+            <span class="text-yellow-400">Biar Musik yang Menemani Perasaanmu</span>
+        </h1>
+        <p class="mb-6 text-lg text-gray-200">
+            Dapatkan rekomendasi musik personal berdasarkan perasaanmu saat ini. Biarkan Vibra memilihkan lagu yang pas untuk suasana hatimu!
+        </p>
         <a href="{{ url_for('login') }}"
         class="inline-flex items-center justify-center bg-yellow-400 text-gray-800 font-bold py-3 px-8 rounded-xl shadow-lg hover:bg-yellow-300 transition text-lg gap-2">
             <i class="fa fa-spotify text-2xl text-black"></i>
-            <span class=" text-black">Login with Spotify</span>
+            <span class=" text-black">Login dengan Spotify</span>
         </a>
     </div>
 </div>

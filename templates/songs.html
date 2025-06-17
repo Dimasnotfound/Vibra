@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block body %}
+<nav class="flex justify-between items-center p-6">
+    <div class="flex items-center space-x-2">
+        <div class="rounded-full w-12 h-12 flex justify-center items-center">
+            <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" class="w-full h-full object-contain">
+        </div>
+        <span class="font-bold text-xl tracking-tight">Vibra</span>
+    </div>
+    <div class="flex space-x-8 text-sm font-medium">
+        <a href="#" class="hover:text-yellow-400 transition">Tentang</a>
+        <a href="#" class="hover:text-yellow-400 transition">Cara Kerja</a>
+        <a href="#" class="hover:text-yellow-400 transition">Kontak</a>
+        <a href="{{ url_for('logout') }}" class="hover:text-yellow-400 transition">Keluar</a>
+    </div>
+</nav>
+
+<div class="max-w-5xl mx-auto mt-10 px-4 text-center">
+    <h1 class="text-3xl md:text-4xl font-extrabold mb-3 text-yellow-400">Rekomendasi Lagu Untukmu</h1>
+    {% if genres %}
+    <div class="mb-3 text-base text-gray-400">
+        Genre dipilih: <span class="font-semibold text-white">{{ genres }}</span>
+    </div>
+    {% endif %}
+    {% if emotion %}
+    <div class="mb-6 text-sm text-gray-400">
+        Emosi terdeteksi: <span class="font-semibold text-yellow-400">{{ emotion|capitalize }}</span>
+    </div>
+    {% endif %}
+    <div class="mb-7">
+        <a href="{{ url_for('mood') }}"
+           class="inline-flex items-center gap-2 bg-gray-800 border border-yellow-400 text-yellow-400 font-bold px-6 py-2 rounded-xl shadow hover:bg-yellow-400 hover:text-gray-900 transition">
+            <i class="fa fa-arrow-left"></i> Kembali ke Mood
+        </a>
+    </div>
+
+    {% if songs %}
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-7 justify-items-center mb-12">
+        {% for song in songs %}
+        <div class="bg-[#232323] rounded-2xl p-5 flex flex-col items-center shadow-lg border border-gray-700 w-full max-w-xs transition hover:scale-105 duration-150">
+            <img src="{{ song.cover_url }}" alt="Cover" class="w-32 h-32 rounded-xl mb-3 object-cover shadow">
+            <div class="font-semibold text-lg mb-1 text-white truncate w-full" title="{{ song.title }}">{{ song.title }}</div>
+            <div class="text-sm text-gray-400 mb-3 w-full truncate" title="{{ song.artist }}">Artis: {{ song.artist }}</div>
+            {% if song.preview_url %}
+                <a href="{{ song.preview_url }}" target="_blank"
+                class="bg-yellow-400 text-gray-800 font-bold py-2 px-6 rounded-lg mb-2 shadow hover:bg-yellow-300 transition">
+                ▶️ Play Preview
+                </a>
+            {% else %}
+                <span class="bg-gray-700 text-gray-300 font-bold py-2 px-6 rounded-lg mb-2 cursor-not-allowed">Preview tidak tersedia</span>
+            {% endif %}
+            {% if song.genre %}
+                <span class="text-xs bg-gray-900 text-yellow-400 px-3 py-1 rounded-full mt-2">{{ song.genre|capitalize }}</span>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-gray-400 mt-8 text-lg">Tidak ada rekomendasi ditemukan, coba genre/mood lain!</p>
+    {% endif %}
+</div>
+{% endblock %}
