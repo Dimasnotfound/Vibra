@@ -1,0 +1,8 @@
+# Ignore dataset folders 
+emot-v1/ 
+emot-v2/ 
+emot-v3/
+Dataset/
+
+# Ignore environment files
+.env
