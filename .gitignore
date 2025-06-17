@@ -7,4 +7,4 @@ Dataset/
 # Ignore environment files
 .env
 test.py
-.cache/
+.cache

@@ -28,7 +28,9 @@
         {% for mood, label in [("happy", "Bahagia"), ("sad", "Sedih"), ("anger", "Marah"), ("love", "Cinta"), ("neutral", "Netral")] %}
         <form method="POST" action="{{ url_for('mood') }}">
             {% if mood == "neutral" %}
-                <input type="hidden" name="mood_text" value="saya merasa neutral sekali">
+                <input type="hidden" name="mood_text" value="saya makan bubur">
+            {% elif mood == "love" %}
+                <input type="hidden" name="mood_text" value="suka banget sama mie goreng ayam bawang, maknyuss">
             {% else %}
                 <input type="hidden" name="mood_text" value="saya merasa {{ label }} sekali">
             {% endif %}
@@ -39,8 +41,8 @@
 
     {% if detected_emotion %}
     <div class="my-8">
-        <h2 class="text-2xl font-bold mb-2">Hasil Deteksi Emosi 🎯</h2>
-        <p class="text-xl mb-4 font-semibold">{{ nice_sentence }}</p>
+        <h2 class="text-2xl font-bold mb-2" id="mood-result-title"></h2>
+        <p class="text-xl mb-4 font-semibold" id="mood-nice-sentence"></p>
 
         <!-- Mood Chart Interaktif -->
         <div class="flex justify-center my-10">
@@ -50,9 +52,7 @@
                 <span class="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-9 text-white text-lg">Sedih</span>
                 <span class="absolute right-0 top-1/2 -translate-y-1/2 translate-x-9 text-white text-lg">Bahagia</span>
                 <!-- Smiley Dinamis -->
-                <span id="smiley"
-                    class="absolute z-10"
-                    style="left: calc(50% + {{ mood_x|float * 120 }}px); top: calc(50% - {{ mood_y|float * 120 }}px); cursor: grab;">
+                <span id="smiley" class="absolute z-10" style="left: calc(50% + 0px); top: calc(50% - 0px); cursor: grab;">
                     <span class="text-4xl">😊</span>
                 </span>
             </div>
@@ -88,12 +88,11 @@
 
 <script>
 document.addEventListener("DOMContentLoaded", function() {
-    // --- Genre multi-select ---
     const genreBtns = document.querySelectorAll(".genre-btn");
     const selectedGenreInputsDiv = document.getElementById("selected-genre-inputs");
     let selectedGenres = [];
 
-    // Mapping posisi chart ke genre rekomendasi
+    // --- Posisi default smiley untuk tiap emosi ---
     const EMOTION_MAP = [
         { x:  1, y:  1, emotion: "happy",    genres: ["pop", "dance", "edm", "funk", "reggae", "indie"] },
         { x: -1, y:  1, emotion: "anger",    genres: ["rock", "metal", "punk", "hardcore", "rap"] },
@@ -101,6 +100,24 @@ document.addEventListener("DOMContentLoaded", function() {
         { x:  0, y:  0, emotion: "neutral",  genres: ["jazz", "chill", "classical", "lo-fi", "folk"] },
         { x: -1, y: -1, emotion: "sad",      genres: ["ballad", "blues", "acoustic", "singer-songwriter", "indie", "classical"] }
     ];
+    const EMOTION_COORD = {
+        happy:   { x: 1,   y: 1   },
+        anger:   { x: -1,  y: 1   },
+        love:    { x: 1,   y: 0   },
+        neutral: { x: 0,   y: 0   },
+        sad:     { x: -1,  y: -1  }
+    };
+    const MOOD_LABEL = {
+        happy: "Bahagia", sad: "Sedih", anger: "Marah", love: "Cinta", neutral: "Netral"
+    };
+    const MOOD_WORDS = {
+        happy:   "Kamu sedang merasa sangat bahagia!",
+        sad:     "Kamu sedang merasa sedih, tidak apa-apa.",
+        anger:   "Energi besar hari ini, yuk salurkan ke hal positif!",
+        love:    "Hati kamu lagi hangat dan penuh cinta!",
+        neutral: "Kamu sedang tenang dan chill.",
+    };
+
     function getNearestEmotion(x, y) {
         let minDist = 100, nearest = EMOTION_MAP[0];
         EMOTION_MAP.forEach(e => {
@@ -116,7 +133,6 @@ document.addEventListener("DOMContentLoaded", function() {
     {% if recommended_genres %}
     selectedGenres = {{ recommended_genres|tojson }};
     {% endif %}
-
     function updateGenreButtonStyle() {
         genreBtns.forEach(btn => {
             const genre = btn.dataset.genre;
@@ -138,16 +154,11 @@ document.addEventListener("DOMContentLoaded", function() {
             selectedGenreInputsDiv.appendChild(inp);
         });
     }
-
     genreBtns.forEach(btn => {
         btn.addEventListener("click", function() {
             const genre = this.dataset.genre;
-            const isSelected = selectedGenres.includes(genre);
-            if (isSelected && selectedGenres.length === 1) {
-                // Tidak bisa menghilangkan genre terakhir!
-                return;
-            }
-            if (isSelected) {
+            if (selectedGenres.includes(genre)) {
+                if (selectedGenres.length === 1) return;
                 selectedGenres = selectedGenres.filter(g => g !== genre);
             } else {
                 selectedGenres.push(genre);
@@ -157,15 +168,40 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     });
 
-    // Chart drag (valence/energy & auto-update genres)
+    // Mood chart logic
     const smiley = document.getElementById("smiley");
     const chart = document.getElementById("mood-chart");
     const valenceInput = document.getElementById("valence-input");
     const energyInput = document.getElementById("energy-input");
     const recGenre = document.getElementById("recommended-genres");
+    const moodResultTitle = document.getElementById("mood-result-title");
+    const moodNiceSentence = document.getElementById("mood-nice-sentence");
     const chartSize = 240;
     let dragging = false, offsetX, offsetY;
     let chartRect = chart ? chart.getBoundingClientRect() : null;
+
+    // --- Set posisi smiley & text awal berdasarkan AI deteksi emosi
+    {% if detected_emotion %}
+    let defaultEmotion = "{{ detected_emotion }}";
+    if (defaultEmotion in EMOTION_COORD) {
+        let {x, y} = EMOTION_COORD[defaultEmotion];
+        // px = chartSize/2 * x (kanan), chartSize/2 * y (atas)
+        let px = (chartSize/2) * x;
+        let py = (chartSize/2) * y;
+        if (smiley) {
+            smiley.style.left = `calc(50% + ${px}px)`;
+            smiley.style.top  = `calc(50% - ${py}px)`;
+        }
+        // update teks hasil emosi
+        if (moodResultTitle && moodNiceSentence) {
+            moodResultTitle.textContent = "Hasil Deteksi Emosi: " + (MOOD_LABEL[defaultEmotion] || defaultEmotion) + " 🎯";
+            moodNiceSentence.textContent = MOOD_WORDS[defaultEmotion] || "Kamu sedang santai.";
+        }
+        // Update valence/energy
+        valenceInput.value = ((x + 1)/2).toFixed(2);
+        energyInput.value  = ((y + 1)/2).toFixed(2);
+    }
+    {% endif %}
 
     if (smiley && chart) {
         smiley.addEventListener("mousedown", function(e) {
@@ -185,28 +221,30 @@ document.addEventListener("DOMContentLoaded", function() {
             smiley.style.top = y + "px";
             let xnorm = ((x - chartRect.width/2) / (chartSize/2));
             let ynorm = -((y - chartRect.height/2) / (chartSize/2));
-            // Set valence & energy (0.0 - 1.0)
             let valence = Math.max(0, Math.min(1, (xnorm + 1) / 2));
             let energy = Math.max(0, Math.min(1, (ynorm + 1) / 2));
             valenceInput.value = valence.toFixed(2);
             energyInput.value = energy.toFixed(2);
-            // Genre update OTOMATIS dari posisi chart:
+            // Update genre rekomendasi, selected, dan hasil deteksi emosi
             let nearest = getNearestEmotion(xnorm, ynorm);
             recGenre.textContent = nearest.genres.join(', ');
             selectedGenres = [...nearest.genres];
             updateGenreButtonStyle();
             updateHiddenInputs();
+            // Update hasil deteksi emosi
+            if (moodResultTitle && moodNiceSentence) {
+                let label = MOOD_LABEL[nearest.emotion] || nearest.emotion;
+                moodResultTitle.textContent = "Hasil Deteksi Emosi: " + label + " 🎯";
+                moodNiceSentence.textContent = MOOD_WORDS[nearest.emotion] || "Kamu sedang santai.";
+            }
         });
         document.addEventListener("mouseup", function(e) {
             if (dragging) smiley.style.cursor = "grab";
             dragging = false;
         });
     }
-    // Render awal
     updateGenreButtonStyle();
     updateHiddenInputs();
 });
 </script>
-
-
 {% endblock %}
